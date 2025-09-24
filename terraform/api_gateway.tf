@@ -36,7 +36,8 @@ resource "aws_api_gateway_method" "get_orders" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.orders.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 # API Gateway Method - POST /orders
@@ -44,7 +45,8 @@ resource "aws_api_gateway_method" "post_orders" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.orders.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 # API Gateway Method - GET /orders/{orderId}
@@ -52,7 +54,8 @@ resource "aws_api_gateway_method" "get_order_by_id" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.order_by_id.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 # API Gateway Method - PUT /orders/{orderId}
@@ -60,7 +63,8 @@ resource "aws_api_gateway_method" "put_order_by_id" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.order_by_id.id
   http_method   = "PUT"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 # API Gateway Method - DELETE /orders/{orderId}
@@ -68,7 +72,8 @@ resource "aws_api_gateway_method" "delete_order_by_id" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.order_by_id.id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 # API Gateway Method - GET /orders/{orderId}/pdf
@@ -76,7 +81,39 @@ resource "aws_api_gateway_method" "get_order_pdf" {
   rest_api_id   = aws_api_gateway_rest_api.orders_api.id
   resource_id   = aws_api_gateway_resource.pdf.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+# API Gateway Request Validator
+resource "aws_api_gateway_request_validator" "orders_validator" {
+  name                        = "${var.project_name}-request-validator"
+  rest_api_id                = aws_api_gateway_rest_api.orders_api.id
+  validate_request_body      = true
+  validate_request_parameters = true
+}
+
+# API Gateway Usage Plan
+resource "aws_api_gateway_usage_plan" "orders_usage_plan" {
+  name         = "${var.project_name}-usage-plan"
+  description  = "Usage plan for orders API"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.orders_api.id
+    stage  = aws_api_gateway_stage.orders_api_stage.stage_name
+  }
+
+  quota_settings {
+    limit  = 10000
+    period = "DAY"
+  }
+
+  throttle_settings {
+    rate_limit  = 100
+    burst_limit = 200
+  }
+
+  tags = local.common_tags
 }
 
 # Lambda Integrations
